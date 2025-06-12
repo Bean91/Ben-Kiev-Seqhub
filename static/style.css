@@ -413,7 +413,7 @@ button {
 .user {
   float: right;
   margin-right: 10%;
-  max-width: 30%;
+  max-width: 60%;
   background-color: #303030;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   margin-bottom: 10px;
@@ -423,7 +423,7 @@ button {
 .ai {
   float: left;
   margin-left: 10%;
-  max-width: 30%;
+  max-width: 60%;
   background-color: #303030;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   margin-bottom: 10px;
@@ -435,4 +435,5 @@ button {
 }
 .msg {
   width:100%;
+  overflow: hidden;
 }

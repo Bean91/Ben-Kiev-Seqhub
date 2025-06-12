@@ -4,19 +4,21 @@
         <title id="title">AP CS Test Prep With AI</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="icon" type="image/x-icon" href="/logo.png">
         <link rel="stylesheet" href="/static/style.css">
-        <script src="/static/script.js"></script>
+        <script src="/static/script.js" defer></script>
     </head>
     <body>
         <div id="top" class="mainbody">
             <h1>AP CS Test Prep With AI</h1>
-            <p>Welcome to the AP CS Test Prep With AI website! This site is designed to help you prepare for the AP Computer Science exam using AI-powered tools.</p>
+            <h3>Welcome to the AP CS Test Prep With AI website! This site is designed to help you prepare for the AP Computer Science exam using AI-powered tools.</h3>
             <br>
-            <br>
-            <textarea style="width: 500px;" type="text" name="user_input" id="user_input" placeholder="Type your question or prompt here..."></textarea>
-            <br>
-            <button id="submit">Ask the AI</button>
+            <div id="msghs" style="overflow: hidden;"></div>
+            <div>
+                <br>
+                <textarea style="width: 500px;font-size:16px;" type="text" name="user_input" id="user_input" placeholder="Type your question or prompt here..."></textarea>
+                <br>
+                <button id="submit" onclick="submit()">Ask the AI</button>
+            </div>
         </div>
     </body>
 </html>

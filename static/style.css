@@ -410,3 +410,29 @@ button {
   border-radius: 5px;
   cursor: pointer;
 }
+.user {
+  float: right;
+  margin-right: 10%;
+  max-width: 30%;
+  background-color: #303030;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin-bottom: 10px;
+  border-radius: 5px;
+  padding: 10px;
+}
+.ai {
+  float: left;
+  margin-left: 10%;
+  max-width: 30%;
+  background-color: #303030;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin-bottom: 10px;
+  border-radius: 5px;
+  padding: 10px;
+}
+#msghs {
+  display:block;
+}
+.msg {
+  width:100%;
+}

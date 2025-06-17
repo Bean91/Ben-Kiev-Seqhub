@@ -1,15 +1,11 @@
-#pip install openai tqdm numpy tiktoken pinecone fastapi uvicorn pydantic python-dotenv -q
-import os, textwrap, math, openai, uvicorn
-from tqdm.auto import tqdm
-import numpy as np
+#pip install openai pinecone fastapi uvicorn pydantic python-dotenv -q
+import os, openai
 from pinecone import Pinecone, ServerlessSpec
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from pathlib import Path
-import multiprocessing as mp
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -107,6 +103,3 @@ async def ask_openai(request: PromptRequest):
   answer, in_tok, out_tok = answer_rag(request.prompt)
   print(answer)
   return {"response": answer}
-
-def start_api():
-    uvicorn.run(app, host="0.0.0.0", port=8000)

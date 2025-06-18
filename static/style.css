@@ -23,7 +23,7 @@
                             Navbar
     ======================================================*/
   #navbar {
-    background: #73899B;
+    background: #0a0531;
     color: rgb(13, 26, 38);
     position: fixed;
     top: 0;
@@ -85,7 +85,7 @@
   }
   
   #navbar li a {
-    color: rgb(13, 26, 38);
+    color: azure;
     display: block;
     font-size: 0.7em;
     height: 50px;
@@ -113,7 +113,7 @@
     width: 0%;
     height: 1px;
     bottom: -1px;
-    background: rgb(13, 26, 38);
+    background: azure;
   }
   
   #navbar li a:before {
@@ -122,13 +122,13 @@
   }
   
   #navbar li a:after {
-    background: rgb(13, 26, 38);
+    background: azure;
     right: 0;
     /* transition: width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1); */
   }
   
   #navbar li a:hover:before {
-    background: rgb(13, 26, 38);
+    background: azure;
     width: 100%;
     transition: width 0.5s cubic-bezier((0.22, 0.61, 0.36, 1));
   }

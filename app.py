@@ -7,6 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from dbservice import create_chat_history_table, insert_message, get_chat_history
+
+# user="admin"
+create_chat_history_table()  # Ensure the chat history table is created
 
 load_dotenv()
 # OpenAI API key input
@@ -54,7 +58,8 @@ def answer_rag(question, k=5):
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question, k))
     sys_prompt = (
         "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
-        + context
+        + context + "\n\nHere is the chat history so far:\n\n"
+        + get_chat_history("admin")[-5][0]
     )
     msgs = [
         {"role": "system", "content": sys_prompt},
@@ -66,16 +71,6 @@ def answer_no_context(question):
     msgs = [{"role": "user", "content": question}]
     return chat(msgs)
 
-MODES = {
-    "1": ("KB-only (retrieved snippets)",    answer_kb_only),
-    "2": ("RAG (top-k chunks only)",          answer_rag),
-    "3": ("No KB (just question to model)",   answer_no_context),
-}
-
-#mode = input("Choose mode (1-3): ").strip()
-#title, fn = MODES[2]
-#print(f"\n--- {title} ---\n")
-#reply, in_tok, out_tok = fn(question)
 app = FastAPI(title="AP CS Test Teacher")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -99,7 +94,9 @@ class PromptRequest(BaseModel):
 
 @app.post("/ask")
 async def ask_openai(request: PromptRequest):
-  print(request.prompt)
-  answer, in_tok, out_tok = answer_rag(request.prompt)
-  print(answer)
-  return {"response": answer}
+    print(request.prompt)
+    insert_message("admin", request.prompt)
+    answer, in_tok, out_tok = answer_rag(request.prompt)
+    insert_message("admin", answer)
+    print(answer)
+    return {"response": answer}

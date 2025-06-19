@@ -1,63 +1,63 @@
-// Load navbar.html into each page
 document.addEventListener("DOMContentLoaded", () => {
     fetch("/static/navbar.html")
         .then(response => response.text())
         .then(data => {
             document.body.insertAdjacentHTML("afterbegin", data);
-            attachNavbarEvents(); // Reattach event listeners after inserting the HTML
+            attachNavbarEvents(); // Attach event listeners after navbar loads
         });
+
     fetch("/static/cookie.html")
         .then(response => response.text())
         .then(data => {
             document.body.insertAdjacentHTML("beforeend", data);
-            console.log(getCookie("cookiesAccepted"))
             if (getCookie("cookiesAccepted") === "true") {
-                document.getElementById("cookie-consent").style.display = "none";
-                console.log("Cookies accepted");
+                const cookieConsent = document.getElementById("cookie-consent");
+                if (cookieConsent) cookieConsent.style.display = "none";
             }
-        }); 
+        });
 });
 
 function attachNavbarEvents() {
     const menuIcon = document.querySelector('.menuIcon');
     const nav = document.querySelector('.overlay-menu');
 
-    menuIcon.addEventListener('click', () => {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i].trim();
-            if (cookie.startsWith("username" + '=')) {
-                if(cookie.substring(9)) {
-                    document.getElementById('signin').style.display = "none";
-                    document.getElementById('dashboard').style.display = "inline-block";
-                    document.getElementById('submitwork').style.display = "inline-block";
-                }
+    // Update navbar UI based on Stack Auth session
+    function updateNavbar() {
+        if(getCookie("session_token")) {
+            signinLink = document.getElementById('signin-link');
+            dashboardLink = document.getElementById('dashboard-link');
+            if (signinLink) {
+                signinLink.style.display = 'none';
             }
-            if (cookie.startsWith("admin" + '=')) {
-                if(cookie.substring(6) === "true") {
-                    document.getElementById('admin').style.display = "inline-block";
-                }
+            if (dashboardLink) {
+                dashboardLink.style.display = 'inline-block';
             }
         }
-        if (nav.style.transform !== 'translateX(0%)') {
-            nav.style.transform = 'translateX(0%)';
-            nav.style.transition = 'transform 0.2s ease-out';
-        }
-    });
+    }
 
-    // Toggle Menu Icon
-    const toggleIcon = document.querySelector('.menuIcon');
+    updateNavbar();
 
-    toggleIcon.addEventListener('click', () => {
-        if (toggleIcon.className !== 'menuIcon toggle') {
-            toggleIcon.className += ' toggle';
-        } else {
-            toggleIcon.className = 'menuIcon';
-            document.querySelector('.overlay-menu').style.transform = 'translateX(-100%)';
-        }
-    });
+    // Menu icon toggle to open overlay menu
+    if (menuIcon && nav) {
+        menuIcon.addEventListener('click', () => {
+            if (nav.style.transform !== 'translateX(0%)') {
+                nav.style.transform = 'translateX(0%)';
+                nav.style.transition = 'transform 0.2s ease-out';
+            } else {
+                nav.style.transform = 'translateX(-100%)';
+                nav.style.transition = 'transform 0.2s ease-out';
+            }
+            // Toggle the menu icon class
+            if (!menuIcon.classList.contains('toggle')) {
+                menuIcon.classList.add('toggle');
+            } else {
+                menuIcon.classList.remove('toggle');
+            }
+        });
+    }
 }
 
+// Cookie helpers (unchanged)
 function setCookie(name, value, days) {
     const d = new Date();
     d.setTime(d.getTime() + (days*24*60*60*1000));
@@ -76,14 +76,11 @@ function getCookie(name) {
 
 function acceptCookies() {
     setCookie("cookiesAccepted", "true", 365);
-    document.getElementById("cookie-consent").style.display = "none";
+    const cookieConsent = document.getElementById("cookie-consent");
+    if (cookieConsent) cookieConsent.style.display = "none";
 }
 
 function denyCookies() {
     alert("You denied cookies. This page will now close.");
     window.location.href = "https://www.google.com";
-}
-
-window.onload = function() {
-    
 }

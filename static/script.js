@@ -9,7 +9,6 @@ function getChatId() {
             number = number.toString(36);
             chatId += number;
         }
-        chatId = crypto.randomUUID(); // or use a fallback generator
         sessionStorage.setItem("chat_id", chatId);
     }
     return chatId;

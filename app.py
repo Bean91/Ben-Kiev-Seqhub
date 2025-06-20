@@ -98,9 +98,9 @@ async def ask_openai(request: PromptRequest, session_token: str = Cookie(default
     db.create_chat_history_table()  # Ensure the chat history table is created
     print(chat_id)
     print(request.prompt)
-    db.insert_message(username, chat_id, request.prompt)
+    db.insert_message(username, chat_id, request.prompt, False)
     answer, in_tok, out_tok = answer_rag(request.prompt, username, chat_id)
-    db.insert_message(username, chat_id, answer)
+    db.insert_message(username, chat_id, answer, True)
     db.update_tokens(username, in_tok+out_tok)
     print(answer)
     return {"response": answer}

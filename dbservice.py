@@ -19,7 +19,8 @@ def create_chat_history_table():
             user_id VARCHAR(255) NOT NULL,
             chat_id VARCHAR(255) NOT NULL,
             message TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ai boolean DEFAULT FALSE
         );
         """
     )
@@ -27,12 +28,12 @@ def create_chat_history_table():
     cursor.close()
     conn.close()
 
-def insert_message(user_id, chat_id, message):
+def insert_message(user_id, chat_id, message, ai):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO chat_history (user_id, chat_id, message) VALUES (%s, %s, %s);",
-        (user_id, chat_id, message)
+        "INSERT INTO chat_history (user_id, chat_id, message, ai) VALUES (%s, %s, %s, %s);",
+        (user_id, chat_id, message, ai)
     )
     conn.commit()
     cursor.close()

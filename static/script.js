@@ -2,7 +2,13 @@ console.log("js ran")
 function getChatId() {
     let chatId = sessionStorage.getItem("chat_id");
     if (!chatId) {
-        // Generate random ID (you can make this more secure if needed)
+        let number = 0;
+        for (let i = 0; i < 32; i++) {
+            number = Math.random()*36;
+            number = Math.floor(number);
+            number = number.toString(36);
+            chatId += number;
+        }
         chatId = crypto.randomUUID(); // or use a fallback generator
         sessionStorage.setItem("chat_id", chatId);
     }

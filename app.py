@@ -135,7 +135,7 @@ def signup(username: str = Form(...), password: str = Form(...), confirm_passwor
     db.create_user(username, hashed, email, first_name, last_name)
     return RedirectResponse(url="/static/signin.html", status_code=303)
 
-@app.post("/updateuser")
+@app.post("/updateusername")
 def update_user(username: str = Form(...), session_token: str = Cookie(default=None)):
     if not session_token:
         return {"error": "No session token provided. Please log in."}

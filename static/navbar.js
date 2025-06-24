@@ -43,6 +43,7 @@ function attachNavbarEvents() {
             if (nav.style.transform !== 'translateX(0%)') {
                 nav.style.transform = 'translateX(0%)';
                 nav.style.transition = 'transform 0.2s ease-out';
+                updateNavbar();
             } else {
                 nav.style.transform = 'translateX(-100%)';
                 nav.style.transition = 'transform 0.2s ease-out';
@@ -50,6 +51,16 @@ function attachNavbarEvents() {
             // Toggle the menu icon class
             if (!menuIcon.classList.contains('toggle')) {
                 menuIcon.classList.add('toggle');
+                if(getCookie("session_token")) {
+                    signinLink = document.getElementById('signin-link');
+                    dashboardLink = document.getElementById('dashboard-link');
+                    if (signinLink) {
+                        signinLink.style.display = 'none';
+                    }
+                    if (dashboardLink) {
+                        dashboardLink.style.display = 'inline-block';
+                    }
+                }
             } else {
                 menuIcon.classList.remove('toggle');
             }

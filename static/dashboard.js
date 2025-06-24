@@ -41,6 +41,7 @@ window.onload = function() {
     .then(data => {
         if (data.success) {
             console.log(data);
+            document.getElementById("user").innerText = data.user_info[0];
             document.getElementById("currentemail").innerText = data.user_info[1];
             document.getElementById("currentfirstname").innerText = data.user_info[2];
             document.getElementById("currentlastname").innerText = data.user_info[3];

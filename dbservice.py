@@ -9,6 +9,14 @@ neon_db = os.environ["NEON_DB"]
 def get_db_connection():
     return psycopg2.connect(neon_db)
 
+def clear_chat_history():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DROP TABLE chat_history;")
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 def create_chat_history_table():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -27,6 +35,18 @@ def create_chat_history_table():
     conn.commit()
     cursor.close()
     conn.close()
+
+def email_to_username(email):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT username FROM users WHERE email = %s;",
+        (email,)
+    )
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result[0] if result else None
 
 def insert_message(user_id, chat_id, message, ai):
     conn = get_db_connection()

@@ -1,4 +1,5 @@
 console.log("js ran")
+let messages = 0;
 function getChatId() {
     let chatId = sessionStorage.getItem("chat_id");
     if (!chatId) {
@@ -17,6 +18,8 @@ function submit(){
     const textValue = document.getElementById('user_input').value;
     document.getElementById('user_input').value = '';
     document.getElementById('msghs').innerHTML += `<div class="msg"><div class="user">${textValue}</div></div><br>`;
+    let thinking = document.getElementById('thinking')
+    thinking.style = "distplay:block;"
     console.log("ran?")
     console.log(textValue)
     fetch('/ask?chat_id=' + getChatId(), {
@@ -28,8 +31,37 @@ function submit(){
     })
     .then(response => response.json())
     .then(data => {
-        // Handle the response from the server
-        document.getElementById('msghs').innerHTML += `<div class="msg"><div class="ai">${data.response || data.error}</div></div><br>`;
+        const msghs = document.getElementById('msghs');
+
+        // Create container divs
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'msg';
+
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'ai';
+        aiDiv.id = `ai${messages}`;
+
+        msgDiv.appendChild(aiDiv);
+        msghs.appendChild(msgDiv);
+        msghs.appendChild(document.createElement('br'));
+
+        if (data.error){
+            aiDiv.innerText = data.error;
+            thinking.style.display = "none";
+            return;
+        }
+
+        let index = 0;
+        function streamText() {
+            if (index < data.response.length) {
+                aiDiv.textContent += data.response.charAt(index);
+                index++;
+                setTimeout(streamText, 15);
+            }
+        }
+        streamText();
+
+        thinking.style.display = "none";
+        messages++;
     })
-    .catch(error => console.error('Error:', error));
 }

@@ -51,14 +51,21 @@ function attachNavbarEvents() {
             // Toggle the menu icon class
             if (!menuIcon.classList.contains('toggle')) {
                 menuIcon.classList.add('toggle');
+                signinLink = document.getElementById('over-signin');
+                dashboardLink = document.getElementById('over-dash');
                 if(getCookie("session_token")) {
-                    signinLink = document.getElementById('signin-link');
-                    dashboardLink = document.getElementById('dashboard-link');
                     if (signinLink) {
                         signinLink.style.display = 'none';
                     }
                     if (dashboardLink) {
                         dashboardLink.style.display = 'inline-block';
+                    }
+                } else {
+                    if (signinLink) {
+                        signinLink.style.display = 'inline-block';
+                    }
+                    if (dashboardLink) {
+                        dashboardLink.style.display = 'none';
                     }
                 }
             } else {

@@ -444,3 +444,8 @@ button {
   width:100%;
   overflow: hidden;
 }
+
+#thinking{
+  margin-left: auto;
+  margin-right: auto;
+}

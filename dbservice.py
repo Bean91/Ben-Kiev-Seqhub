@@ -1,6 +1,5 @@
-import os
+import os, psycopg2, secrets
 from dotenv import load_dotenv
-import psycopg2
 
 load_dotenv()
 
@@ -101,7 +100,7 @@ def create_user_table():
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
+            id INTEGER NOT NULL,
             username VARCHAR(255) UNIQUE NOT NULL,
             password TEXT NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
@@ -117,11 +116,12 @@ def create_user_table():
     conn.close()
 
 def create_user(username, hashed_password, email, first_name, last_name):
+    user_id = secrets.token_urlsafe(32)
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO users (username, password, email, first_name, last_name, session_token) VALUES (%s, %s, %s, %s, %s, %s);",
-        (username, hashed_password, email, first_name, last_name, "N/A")
+        "INSERT INTO users (id, username, password, email, first_name, last_name, session_token) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+        (user_id, username, hashed_password, email, first_name, last_name, "N/A")
     )
     conn.commit()
     cursor.close()
@@ -246,3 +246,15 @@ def update_user_password(username, hashed_password):
     conn.commit()
     cursor.close()
     conn.close()
+
+def id_to_username(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT username FROM users WHERE id = %s;",
+        (id,)
+    )
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result if result else None

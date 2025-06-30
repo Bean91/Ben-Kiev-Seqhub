@@ -22,7 +22,8 @@ function submit(){
     thinking.style = "distplay:block;"
     console.log("ran?")
     console.log(textValue)
-    fetch('/ask?chat_id=' + getChatId(), {
+    const type = document.getElementById("type").value;
+    fetch('/ask?chat_id=' + getChatId() + "&type_selector=" + type, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

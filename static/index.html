@@ -20,6 +20,14 @@
                 <br>
                 <textarea style="width: 500px;font-size:16px;" type="text" name="user_input" id="user_input" placeholder="Type your question or prompt here..."></textarea>
                 <br>
+                <h5>Choose the type of RAG you want to use (in cheap-expensive order):</h5>
+                <select name="type" id="type">
+                    <option value="naive">Naive (cheapest)</option>
+                    <option value="reform">Query Driven (helps with typos)</option>
+                    <option value="retrieval">Retrieval Guided (improves accuracy)</option>
+                    <option value="faithful">Faithfulness-Aware (most accurate)</option>
+                    <option value="iterative">Multi-Round (large questions)</option>
+                </select>
                 <button id="submit" onclick="submit()">Ask the AI</button>
             </div>
         </div>

@@ -50,6 +50,8 @@ def answer_kb_only(question, k=5):
     hits = top_k_chunks(question, k)
     return "\n\n-----------------\n".join(f"[Score {score:.3f}]\n{txt}" for txt, score in hits), 0, 0
 
+#DIFFERENT RAG ARCHITECTURES:
+
 def answer_rag(question, username, chat_id, k=5):
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question, k))
     history = db.get_chat_history(username, chat_id)
@@ -66,9 +68,126 @@ def answer_rag(question, username, chat_id, k=5):
     ]
     return chat(msgs)
 
-def answer_no_context(question):
-    msgs = [{"role": "user", "content": question}]
-    return chat(msgs)
+def query_driven_retrieval(query, username, chat_id):
+    prompt = (
+        f"Rephrase the user question to be precise and decomposed for retrieval of relevant context from this java text book:\nQuestion: '{query}'"
+    )
+    reform = openai.chat.completions.create(
+        model=CHAT_MODEL,
+        messages=[{"role": "system", "content": prompt}]
+    ).choices[0].message.content.strip()
+    return answer_rag(reform, username, chat_id)
+
+def answer_rag_faithfulness(question, username, chat_id, k=5):
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question, k))
+    history = db.get_chat_history(username, chat_id)
+    last_five = history[-5:] if len(history) >= 5 else history
+    chat_history_text = "\n".join(msg[0] for msg in last_five)
+    sys_prompt = (
+        "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
+        + context + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": sys_prompt},
+        {"role": "user",   "content": question}
+    ]
+    response, i, o = chat(msgs)
+    return response, context, i, o
+
+def faithfulness_aware(query, username, chat_id):
+    answer, context, in_tok, out_tok = answer_rag_faithfulness(query, username, chat_id)
+    prompt = (
+        "Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nPlease brutally critique your former answer, thanks"
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    response, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    prompt = (
+        "Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nHere are you're critiques:\n" + response + "\n\nPlease fix your answer."
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    response, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    return response, in_tok, out_tok
+
+def retrieval_guided(query, username, chat_id):
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(query))
+    history = db.get_chat_history(username, chat_id)
+    last_five = history[-5:] if len(history) >= 5 else history
+    chat_history_text = "\n".join(msg[0] for msg in last_five)
+    prompt = (
+        "Here is the users question:\n" + query + "\nPlease write a summary for each of the following pieces of context and how they relate to the question:\n" + context + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    response, in_tok, out_tok = chat(msgs)
+    prompt = (
+        "Here is the users question:\n" + query + "\nAnd here is the summary of the context.\n" + response  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    answer, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    return answer, in_tok, out_tok
+
+def iterative_retrieval(query, username, chat_id):
+    history = db.get_chat_history(username, chat_id)
+    last_five = history[-5:] if len(history) >= 5 else history
+    chat_history_text = "\n".join(msg[0] for msg in last_five)
+    prompt = (
+        "Here is the users question:\n" + query + "\nPlease write a prompt or phrase that you think will give the most relevant information for the first reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    answer1, in_tok, out_tok = chat(msgs)
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer1))
+    prompt = (
+        "Here is the users question:\n" + query + "\nHere is the information asked for got in the first round:" + answer1 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    answer2, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    context += "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer2))
+    prompt = (
+        "Here is the users question:\n" + query + "\nHere is the information you asked for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    answer3, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer3))
+    prompt = (
+        "Here is the users question:\n" + query + "\nHere is the information you aksed for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information you asked for in the third round:" + answer3 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write an answer with all of the information given to you thanks.."  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    response, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    return response, in_tok, out_tok
 
 app = FastAPI(title="AP CS Test Teacher")
 
@@ -91,8 +210,14 @@ app.add_middleware(
 class PromptRequest(BaseModel):
     prompt: str
 
+class ApiRequest(BaseModel):
+    prompt: str
+    chat_history: str
+
+db.create_user_table()  # Ensure the user table is created
+
 @app.post("/ask")
-async def ask_openai(request: PromptRequest, session_token: str = Cookie(default=None), chat_id: str = Query(default=None)):
+async def ask_openai(request: PromptRequest, session_token: str = Cookie(default=None), chat_id: str = Query(default=None), type_selector: str = Query(default="naive")):
     if not session_token:
         return {"error": "No session token provided. Please log in."}
     username = db.get_session_user(session_token)
@@ -100,14 +225,172 @@ async def ask_openai(request: PromptRequest, session_token: str = Cookie(default
     print(chat_id)
     print(request.prompt)
     db.insert_message(username, chat_id, request.prompt, False)
-    answer, in_tok, out_tok = answer_rag(request.prompt, username, chat_id)
+    if type_selector == "naive":
+        answer, in_tok, out_tok = answer_rag(request.prompt, username, chat_id)
+    elif type_selector == "reform":
+        answer, in_tok, out_tok = query_driven_retrieval(request.prompt, username, chat_id)
+    elif type_selector == "faithful":
+        answer, in_tok, out_tok = faithfulness_aware(request.prompt, username, chat_id)
+    elif type_selector == "retrieval":
+        answer, in_tok, out_tok = retrieval_guided(request.prompt, username, chat_id)
+    elif type_selector == "iterative":
+        answer, in_tok, out_tok = iterative_retrieval(request.prompt, username, chat_id)
     db.insert_message(username, chat_id, answer, True)
     db.update_tokens(username, in_tok+out_tok)
     print(answer)
     return {"response": answer}
 
+
+#API SETUP
+def answer_rag_api(question, chat_history_text, k=5):
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question, k))
+    sys_prompt = (
+        "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
+        + context + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": sys_prompt},
+        {"role": "user",   "content": question}
+    ]
+    return chat(msgs)
+
+def query_driven_retrieval_api(query, chat_history):
+    prompt = (
+        f"Rephrase the user question to be precise and decomposed for retrieval of relevant context from this java text book:\nQuestion: '{query}'"
+    )
+    reform = openai.chat.completions.create(
+        model=CHAT_MODEL,
+        messages=[{"role": "system", "content": prompt}]
+    ).choices[0].message.content.strip()
+    return answer_rag_api(reform, chat_history)
+
+def answer_rag_faithfulness_api(question, chat_history_text, k=5):
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question, k))
+    sys_prompt = (
+        "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
+        + context + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": sys_prompt},
+        {"role": "user",   "content": question}
+    ]
+    response, i, o = chat(msgs)
+    return response, context, i, o
+
+def faithfulness_aware_api(query, chat_history):
+    answer, context, in_tok, out_tok = answer_rag_faithfulness_api(query, chat_history)
+    prompt = (
+        "Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nPlease brutally critique your former answer, thanks"
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    response, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    prompt = (
+        "Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nHere are you're critiques:\n" + response + "\n\nPlease fix your answer."
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    response, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    return response, in_tok, out_tok
+
+def retrieval_guided_api(query, chat_history_text):
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(query))
+    prompt = (
+        "Here is the users question:\n" + query + "\nPlease write a summary for each of the following pieces of context and how they relate to the question:\n" + context + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    response, in_tok, out_tok = chat(msgs)
+    prompt = (
+        "Here is the users question:\n" + query + "\nAnd here is the summary of the context.\n" + response  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    answer, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    return answer, in_tok, out_tok
+
+def iterative_retrieval_api(query, chat_history_text):
+    prompt = (
+        "Here is the users question:\n" + query + "\nPlease write a prompt or phrase that you think will give the most relevant information for the first reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    answer1, in_tok, out_tok = chat(msgs)
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer1))
+    prompt = (
+        "Here is the users question:\n" + query + "\nHere is the information asked for got in the first round:" + answer1 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    answer2, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    context += "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer2))
+    prompt = (
+        "Here is the users question:\n" + query + "\nHere is the information you asked for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    answer3, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer3))
+    prompt = (
+        "Here is the users question:\n" + query + "\nHere is the information you aksed for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information you asked for in the third round:" + answer3 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write an answer with all of the information given to you thanks.."  + "\n\nHere is the chat history so far:\n\n"
+        + chat_history_text
+    )
+    msgs = [
+        {"role": "system", "content": prompt}
+    ]
+    response, i, o = chat(msgs)
+    in_tok += i
+    out_tok += o
+    return response, in_tok, out_tok
+
+@app.post("/api")
+async def api_request(apiData: ApiRequest, id: str = Query(), type_selector: str = Query(default="naive")):
+    if not id:
+        return {"error": "No session user ID provided."}
+    prompt = apiData.prompt
+    chat_history = apiData.chat_history
+    username = db.id_to_username(id)
+    db.create_chat_history_table()  # Ensure the chat history table is created
+    print(id)
+    if type_selector == "naive":
+        answer, in_tok, out_tok = answer_rag_api(prompt, username, chat_history)
+    elif type_selector == "reform":
+        answer, in_tok, out_tok = query_driven_retrieval_api(prompt, username, chat_history)
+    elif type_selector == "faithful":
+        answer, in_tok, out_tok = faithfulness_aware_api(prompt, username, chat_history)
+    elif type_selector == "retrieval":
+        answer, in_tok, out_tok = retrieval_guided_api(prompt, username, chat_history)
+    elif type_selector == "iterative":
+        answer, in_tok, out_tok = iterative_retrieval_api(prompt, username, chat_history)
+    db.update_tokens(username, in_tok+out_tok)
+    print(answer)
+    return {"response": answer}
+
 # Auth System
-db.create_user_table()  # Ensure the user table is created
 
 def hash_password(plain_password: str) -> str:
     salt = bcrypt.gensalt()  # Generates a random salt

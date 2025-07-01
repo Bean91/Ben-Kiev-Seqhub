@@ -444,6 +444,7 @@ button {
   margin-bottom: 10px;
   border-radius: 5px;
   padding: 10px;
+  text-align: left;
 }
 #msghs {
   display:block;

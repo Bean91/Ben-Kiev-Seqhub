@@ -2,6 +2,12 @@
 <html>
     <head>
         <title id="title">AP CS Test Prep With AI</title>
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <link rel="stylesheet"href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="/static/style.css">
@@ -18,17 +24,19 @@
             <div>
                 <img id="thinking" style="display:none;" height="50px" src="/static/thinking.gif" alt="It's Thinking">
                 <br>
-                <textarea style="width: 500px;font-size:16px;" type="text" name="user_input" id="user_input" placeholder="Type your question or prompt here..."></textarea>
-                <br>
-                <h5>Choose the type of RAG you want to use (in cheap-expensive order):</h5>
-                <select name="type" id="type">
-                    <option value="naive">Naive (cheapest)</option>
-                    <option value="reform">Query Driven (helps with typos)</option>
-                    <option value="retrieval">Retrieval Guided (improves accuracy)</option>
-                    <option value="faithful">Faithfulness-Aware (most accurate)</option>
-                    <option value="iterative">Multi-Round (large questions)</option>
-                </select>
-                <button id="submit" onclick="submit()">Ask the AI</button>
+                <div id="submitarea">
+                    <textarea style="width: 500px;font-size:16px;" type="text" name="user_input" id="user_input" placeholder="Type your question or prompt here..."></textarea>
+                    <br>
+                    <h5>Choose the type of RAG you want to use (in cheap-expensive order):</h5>
+                    <select name="type" id="type">
+                        <option value="naive">Naive (cheapest)</option>
+                        <option value="reform">Query Driven (helps with typos)</option>
+                        <option value="retrieval">Retrieval Guided (improves accuracy)</option>
+                        <option value="faithful">Faithfulness-Aware (most accurate)</option>
+                        <option value="iterative">Multi-Round (large questions)</option>
+                    </select>
+                    <button id="submit" onclick="submit()">Ask the AI</button>
+                </div>
             </div>
         </div>
     </body>

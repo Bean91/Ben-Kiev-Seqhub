@@ -242,8 +242,8 @@ async def ask_openai(request: PromptRequest, session_token: str = Cookie(default
 
 
 #API SETUP
-def answer_rag_api(question, chat_history_text, k=5):
-    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question, k))
+def answer_rag_api(question, chat_history_text):
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question))
     sys_prompt = (
         "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
         + context + "\n\nHere is the chat history so far:\n\n"
@@ -265,8 +265,8 @@ def query_driven_retrieval_api(query, chat_history):
     ).choices[0].message.content.strip()
     return answer_rag_api(reform, chat_history)
 
-def answer_rag_faithfulness_api(question, chat_history_text, k=5):
-    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question, k))
+def answer_rag_faithfulness_api(question, chat_history_text):
+    context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question))
     sys_prompt = (
         "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
         + context + "\n\nHere is the chat history so far:\n\n"
@@ -377,15 +377,17 @@ async def api_request(apiData: ApiRequest, id: str = Query(), type_selector: str
     db.create_chat_history_table()  # Ensure the chat history table is created
     print(id)
     if type_selector == "naive":
-        answer, in_tok, out_tok = answer_rag_api(prompt, username, chat_history)
+        answer, in_tok, out_tok = answer_rag_api(prompt, chat_history)
     elif type_selector == "reform":
-        answer, in_tok, out_tok = query_driven_retrieval_api(prompt, username, chat_history)
+        answer, in_tok, out_tok = query_driven_retrieval_api(prompt, chat_history)
     elif type_selector == "faithful":
-        answer, in_tok, out_tok = faithfulness_aware_api(prompt, username, chat_history)
+        answer, in_tok, out_tok = faithfulness_aware_api(prompt, chat_history)
     elif type_selector == "retrieval":
-        answer, in_tok, out_tok = retrieval_guided_api(prompt, username, chat_history)
+        answer, in_tok, out_tok = retrieval_guided_api(prompt, chat_history)
     elif type_selector == "iterative":
-        answer, in_tok, out_tok = iterative_retrieval_api(prompt, username, chat_history)
+        answer, in_tok, out_tok = iterative_retrieval_api(prompt, chat_history)
+    print(in_tok+out_tok)
+    print(username)
     db.update_tokens(username, in_tok+out_tok)
     print(answer)
     return {"response": answer}

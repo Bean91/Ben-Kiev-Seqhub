@@ -1,4 +1,4 @@
-import os, psycopg2, secrets
+import os, psycopg2, uuid
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -100,13 +100,13 @@ def create_user_table():
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER NOT NULL,
+            id UUID PRIMARY KEY,
             username VARCHAR(255) UNIQUE NOT NULL,
             password TEXT NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
             first_name VARCHAR(255) NOT NULL,
             last_name VARCHAR(255) NOT NULL,
-            total_tokens INTEGER DEFAULT 0,
+            total_tokens INTEGER DEFAULT 0 NOT NULL,
             session_token TEXT
         );
         """
@@ -116,12 +116,12 @@ def create_user_table():
     conn.close()
 
 def create_user(username, hashed_password, email, first_name, last_name):
-    user_id = secrets.token_urlsafe(32)
+    user_id = uuid.uuid4()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO users (id, username, password, email, first_name, last_name, session_token) VALUES (%s, %s, %s, %s, %s, %s, %s);",
-        (user_id, username, hashed_password, email, first_name, last_name, "N/A")
+        "INSERT INTO users (id, username, password, email, first_name, last_name, session_token, total_tokens) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);",
+        (str(user_id), username, hashed_password, email, first_name, last_name, "N/A", str(0))
     )
     conn.commit()
     cursor.close()
@@ -151,6 +151,9 @@ def get_session_user(session_token):
     return result[0] if result else None
 
 def update_tokens(username, tokens):
+    print(username)
+    print(type(username))
+    print(tokens)
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
@@ -257,4 +260,4 @@ def id_to_username(id):
     result = cursor.fetchone()
     cursor.close()
     conn.close()
-    return result if result else None
+    return result[0] if result else None

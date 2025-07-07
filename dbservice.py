@@ -45,7 +45,8 @@ def create_api_history_table():
             username VARCHAR(255) NOT NULL,
             message TEXT NOT NULL,
             ai boolean DEFAULT FALSE,
-            type TEXT NOT NULL
+            type TEXT NOT NULL,
+            passed_history TEXT NOT NULL
         );
         """
     )
@@ -53,12 +54,12 @@ def create_api_history_table():
     cursor.close()
     conn.close()
 
-def insert_api_message(user_id, message, ai, typerag):
+def insert_api_message(user_id, message, ai, typerag, history):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO api_history (username, message, ai, type) VALUES (%s, %s, %s, %s);",
-        (user_id, message, ai, typerag)
+        "INSERT INTO api_history (username, message, ai, type, passed_history) VALUES (%s, %s, %s, %s, %s);",
+        (user_id, message, ai, typerag, history)
     )
     conn.commit()
     cursor.close()

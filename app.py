@@ -401,8 +401,8 @@ async def api_request(apiData: ApiRequest, id: str = Query(), type_selector: str
     print(username)
     db.update_tokens(username, in_tok+out_tok)
     print(answer)
-    db.insert_api_message(username, apiData.prompt, False, type_selector)
-    db.insert_api_message(username, answer, True, type_selector)
+    db.insert_api_message(username, apiData.prompt, False, type_selector, apiData.chat_history)
+    db.insert_api_message(username, answer, True, type_selector, "")
     return {"response": answer}
 
 # Auth System

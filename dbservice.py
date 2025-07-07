@@ -35,6 +35,35 @@ def create_chat_history_table():
     cursor.close()
     conn.close()
 
+def create_api_history_table():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS api_history (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            ai boolean DEFAULT FALSE,
+            type TEXT NOT NULL
+        );
+        """
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def insert_api_message(user_id, message, ai, typerag):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO api_history (username, message, ai, type) VALUES (%s, %s, %s, %s);",
+        (user_id, message, ai, typerag)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 def email_to_username(email):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -58,17 +87,30 @@ def insert_message(user_id, chat_id, message, ai):
     cursor.close()
     conn.close()
 
-def get_chat_history(user_id, chat_id, limit=20):
+def get_chat_history(user_id, chat_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT message FROM chat_history WHERE user_id = %s AND chat_id = %s ORDER BY created_at DESC LIMIT %s;",
-        (user_id, chat_id, limit)
+        "SELECT message FROM chat_history WHERE user_id = %s AND chat_id = %s ORDER BY created_at DESC;",
+        (user_id, chat_id)
     )
     messages = cursor.fetchall()
     cursor.close()
     conn.close()
     return messages
+
+def get_chat_history_special(user_id, chat_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT message, ai FROM chat_history WHERE user_id = %s AND chat_id = %s ORDER BY created_at ASC;",
+        (user_id, chat_id)
+    )
+    messages = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    print(messages)
+    return messages if messages else None
 
 def get_user_password(username):
     conn = get_db_connection()
@@ -90,6 +132,45 @@ def get_user_name(username):
         (username,)
     )
     result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return result if result else None
+
+def create_history_table():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS history (
+            chat_id VARCHAR(255) NOT NULL,
+            username VARCHAR(255)  NOT NULL,
+            chat_name VARCHAR(255)
+        );
+        """
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def new_chat(name, id, username):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO history (chat_name, username, chat_id) VALUES (%s, %s, %s);",
+        (name, username, id)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def get_history(username):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT chat_name, chat_id FROM history WHERE username = %s;",
+        (username,)
+    )
+    result = cursor.fetchall()
     cursor.close()
     conn.close()
     return result if result else None
@@ -173,6 +254,10 @@ def update_user(current_user, username):
     )
     cursor.execute(
         "UPDATE chat_history SET user_id = %s WHERE user_id = %s;",
+        (username, current_user)
+    )
+    cursor.execute(
+        "UPDATE history SET username = %s WHERE username = %s;",
         (username, current_user)
     )
     conn.commit()

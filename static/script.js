@@ -1,16 +1,18 @@
 console.log("js ran")
 let messages = 0;
 function getChatId() {
-    let chatId = sessionStorage.getItem("chat_id");
-    if (!chatId) {
+    const params = new URLSearchParams(window.location.search);
+    let chatId = params.get("chat_id");
+    if (chatId === null) {
         let number = 0;
+        chatId = "";
         for (let i = 0; i < 32; i++) {
             number = Math.random()*36;
             number = Math.floor(number);
             number = number.toString(36);
             chatId += number;
         }
-        sessionStorage.setItem("chat_id", chatId);
+        location.href = "/?chat_id="+chatId;
     }
     return chatId;
 }
@@ -38,8 +40,7 @@ function submit(){
 
         const msgDiv = document.createElement('div');
         msgDiv.className = 'msg';
-
-        // Create two divs: one for streaming text, one for final rendered markdown
+ 
         const aiDivRaw = document.createElement('div');
         aiDivRaw.className = 'ai markdown-body';
         aiDivRaw.id = `ai-raw-${messages}`;
@@ -114,5 +115,48 @@ function submit(){
         thinking.style.display = "none";
         submitarea.style = "display:block;"
         messages++;
-    })
+        loadHistory();
+    });
+}
+
+function loadHistory() {
+    let historylist = document.getElementById("historylist")
+    chat_id = getChatId()
+    fetch("/loadhistory", {
+        method: "POST"
+    }).then(response => response.json())
+    .then(data => {
+        console.log(data.history)
+        console.log(data.error)
+        if (data.history) {
+            historylist.innerHTML = "";
+            data.history.forEach(chat => {
+                historylist.innerHTML += `<div class="chat-history-item"><a href="/?chat_id=${chat[1]}">${chat[0]}</a></div>`;
+            })
+        }
+    });
+}
+
+function loadChat() {
+    chat_id = getChatId();
+    fetch("/get_chat_history?chat_id="+ chat_id, {
+        method: "POST"
+    }).then(response => response.json())
+    .then(data => {
+        console.log(data);
+        data.forEach(message => {
+            console.log(message);
+            if (message[1]) {
+                document.getElementById('msghs').innerHTML += `<div class="msg"><div class="ai markdown-body">${message[0]}</div></div><br>`;
+            } else {
+                document.getElementById('msghs').innerHTML += `<div class="msg"><div class="user">${message[0]}</div></div><br>`;
+            }
+        });
+    });
+
+}
+
+window.onload = function() {
+    loadHistory();
+    loadChat();
 }

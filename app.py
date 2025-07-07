@@ -30,7 +30,6 @@ if index_name not in pc.list_indexes().names():
 
 index = pc.Index(index_name)
 
-# Choose models
 CHAT_MODEL   = "gpt-4o"
 EMBED_MODEL  = "text-embedding-3-small"
 def top_k_chunks(query, k=3):
@@ -56,6 +55,7 @@ def answer_rag(question, username, chat_id, k=5):
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question, k))
     history = db.get_chat_history(username, chat_id)
     last_five = history[-5:] if len(history) >= 5 else history
+    
     chat_history_text = "\n".join(msg[0] for msg in last_five)
     sys_prompt = (
         "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
@@ -222,6 +222,16 @@ async def ask_openai(request: PromptRequest, session_token: str = Cookie(default
         return {"error": "No session token provided. Please log in."}
     username = db.get_session_user(session_token)
     db.create_chat_history_table()  # Ensure the chat history table is created
+    db.create_history_table()
+    print(chat_id)
+    history = db.get_chat_history(username, chat_id)
+    if len(history) == 0:
+        prompt = ("Please generate a title for this chat. Here is the first message sent:\n\n"+request.prompt)
+        msgs = [
+            {"role": "system", "content": prompt}
+        ]
+        answer, _, _ = chat(msgs)
+        db.new_chat(answer, chat_id, username)
     print(chat_id)
     print(request.prompt)
     db.insert_message(username, chat_id, request.prompt, False)
@@ -374,7 +384,8 @@ async def api_request(apiData: ApiRequest, id: str = Query(), type_selector: str
     prompt = apiData.prompt
     chat_history = apiData.chat_history
     username = db.id_to_username(id)
-    db.create_chat_history_table()  # Ensure the chat history table is created
+    db.create_api_history_table()
+    
     print(id)
     if type_selector == "naive":
         answer, in_tok, out_tok = answer_rag_api(prompt, chat_history)
@@ -390,6 +401,8 @@ async def api_request(apiData: ApiRequest, id: str = Query(), type_selector: str
     print(username)
     db.update_tokens(username, in_tok+out_tok)
     print(answer)
+    db.insert_api_message(username, apiData.prompt, False, type_selector)
+    db.insert_api_message(username, answer, True, type_selector)
     return {"response": answer}
 
 # Auth System
@@ -499,3 +512,17 @@ async def reset_pw(email: str = Form(...)):
         reset_link = "https://ben.seqhubai.com/static/resetpw.html?session_token="+session_token
         await send_reset_email(email, name, reset_link)
     return RedirectResponse(url="/", status_code=303)
+
+@app.post("/loadhistory")
+def load_history(session_token: str = Cookie(default=None)):
+    username = db.get_session_user(session_token)
+    if (username):
+        return {"history": db.get_history(username)}
+    else:
+        return {"error": "Login Required"}
+    
+@app.post("/get_chat_history")
+def get_chat_history(chat_id: str = Query(...), session_token: str = Cookie(default=None)):
+    username = db.get_session_user(session_token)
+    print(db.get_chat_history_special(username, chat_id))
+    return db.get_chat_history_special(username, chat_id)

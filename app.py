@@ -397,6 +397,8 @@ async def api_request(apiData: ApiRequest, id: str = Query(), type_selector: str
         answer, in_tok, out_tok = retrieval_guided_api(prompt, chat_history)
     elif type_selector == "iterative":
         answer, in_tok, out_tok = iterative_retrieval_api(prompt, chat_history)
+    else:
+        answer, in_tok, out_tok = chat((prompt+chat_history))
     print(in_tok+out_tok)
     print(username)
     db.update_tokens(username, in_tok+out_tok)

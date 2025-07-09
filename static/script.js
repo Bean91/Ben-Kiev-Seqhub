@@ -126,6 +126,7 @@ function loadHistory() {
         method: "POST"
     }).then(response => response.json())
     .then(data => {
+
         console.log(data.history)
         console.log(data.error)
         if (data.history) {
@@ -143,15 +144,57 @@ function loadChat() {
         method: "POST"
     }).then(response => response.json())
     .then(data => {
+        function addCopyButtons(container) {
+            container.querySelectorAll('pre').forEach(pre => {
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.innerText = 'Copied!';
+                button.innerHTML = '<i class="fa fa-copy"></i> Copy';
+                button.onclick = () => {
+                    const code = pre.querySelector('code');
+                    navigator.clipboard.writeText(code.innerText).then(() => {
+                        button.innerText = 'Copied!';
+                        setTimeout(() => button.innerHTML = '<i class="fa fa-copy"></i> Copy', 1500);
+                    });
+                };
+                pre.style.position = 'relative';
+                button.style.position = 'absolute';
+                button.style.top = '8px';
+                button.style.right = '8px';
+                button.style.fontSize = '12px';
+                button.style.padding = '4px 8px';
+                button.style.backgroundColor = '#24292e';
+                button.style.color = '#fff';
+                button.style.border = 'none';
+                button.style.borderRadius = '4px';
+                button.style.cursor = 'pointer';
+                pre.appendChild(button);
+            });
+        }
         console.log(data);
         data.forEach(message => {
             console.log(message);
+            const msghs = document.getElementById('msghs')
+            const msgDiv = document.createElement('div')
+            msgDiv.className = 'msg'
             if (message[1]) {
-                document.getElementById('msghs').innerHTML += `<div class="msg"><div class="ai markdown-body">${message[0]}</div></div><br>`;
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'ai markdown-body';
+                aiDiv.innerHTML = DOMPurify.sanitize(marked.parse(message[0]));
+                aiDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
+                msgDiv.appendChild(aiDiv);
+//                document.getElementById('msghs').innerHTML += `<div class="msg"><div class="ai markdown-body">${message[0]}</div></div><br>`;
             } else {
-                document.getElementById('msghs').innerHTML += `<div class="msg"><div class="user">${message[0]}</div></div><br>`;
+                const userDiv = document.createElement('div');
+                userDiv.className = 'user';
+                userDiv.innerHTML = DOMPurify.sanitize(marked.parse(message[0]));
+                userDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
+                msgDiv.appendChild(userDiv);
+//                document.getElementById('msghs').innerHTML += `<div class="msg"><div class="user">${message[0]}</div></div><br>`;
             }
+            msghs.appendChild(msgDiv);
         });
+        addCopyButtons(msghs);
     });
 
 }

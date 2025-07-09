@@ -95,5 +95,5 @@ for i, a in enumerate(answers):
 
 for i in range(len(grades)):
     for j, grade in enumerate(grades[i]):
-        with open("/grades.txt", "w") as f:
+        with open("grades.txt", "w") as f:
             f.write("\nGrade for question " + (i+1) + ", mode " + j + "\n" + grade + "\n")

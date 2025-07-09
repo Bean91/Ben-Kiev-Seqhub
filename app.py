@@ -16,7 +16,7 @@ openai.api_key = OPENAI_API_KEY
 # Pinecone (v3) initialization
 pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
 
-index_name = "java-embeddings"
+index_name = "final-embeddings"
 if index_name not in pc.list_indexes().names():
     pc.create_index(
         name=index_name,
@@ -58,7 +58,7 @@ def answer_rag(question, username, chat_id, k=5):
     
     chat_history_text = "\n".join(msg[0] for msg in last_five)
     sys_prompt = (
-        "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
         + context + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
@@ -70,7 +70,7 @@ def answer_rag(question, username, chat_id, k=5):
 
 def query_driven_retrieval(query, username, chat_id):
     prompt = (
-        f"Rephrase the user question to be precise and decomposed for retrieval of relevant context from this java text book:\nQuestion: '{query}'"
+        f"You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Rephrase the user question to be precise and decomposed for retrieval of relevant context from this java text book:\nQuestion: '{query}'"
     )
     reform = openai.chat.completions.create(
         model=CHAT_MODEL,
@@ -84,7 +84,7 @@ def answer_rag_faithfulness(question, username, chat_id, k=5):
     last_five = history[-5:] if len(history) >= 5 else history
     chat_history_text = "\n".join(msg[0] for msg in last_five)
     sys_prompt = (
-        "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Use ONLY the facts below (plus your own language knowledge) to answer:\n\nn"
         + context + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
@@ -98,7 +98,7 @@ def answer_rag_faithfulness(question, username, chat_id, k=5):
 def faithfulness_aware(query, username, chat_id):
     answer, context, in_tok, out_tok = answer_rag_faithfulness(query, username, chat_id)
     prompt = (
-        "Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nPlease brutally critique your former answer, thanks"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nPlease brutally critique your former answer, thanks"
     )
     msgs = [
         {"role": "system", "content": prompt}
@@ -107,7 +107,7 @@ def faithfulness_aware(query, username, chat_id):
     in_tok += i
     out_tok += o
     prompt = (
-        "Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nHere are you're critiques:\n" + response + "\n\nPlease fix your answer."
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nHere are you're critiques:\n" + response + "\n\nPlease fix your answer."
     )
     msgs = [
         {"role": "system", "content": prompt}
@@ -123,7 +123,7 @@ def retrieval_guided(query, username, chat_id):
     last_five = history[-5:] if len(history) >= 5 else history
     chat_history_text = "\n".join(msg[0] for msg in last_five)
     prompt = (
-        "Here is the users question:\n" + query + "\nPlease write a summary for each of the following pieces of context and how they relate to the question:\n" + context + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could.Here is the users question:\n" + query + "\nPlease write a summary for each of the following pieces of context and how they relate to the question:\n" + context + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -131,7 +131,7 @@ def retrieval_guided(query, username, chat_id):
     ]
     response, in_tok, out_tok = chat(msgs)
     prompt = (
-        "Here is the users question:\n" + query + "\nAnd here is the summary of the context.\n" + response  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nAnd here is the summary of the context.\n" + response  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -147,7 +147,7 @@ def iterative_retrieval(query, username, chat_id):
     last_five = history[-5:] if len(history) >= 5 else history
     chat_history_text = "\n".join(msg[0] for msg in last_five)
     prompt = (
-        "Here is the users question:\n" + query + "\nPlease write a prompt or phrase that you think will give the most relevant information for the first reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nPlease write a prompt or phrase that you think will give the most relevant information for the first reasoning step."  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -156,7 +156,7 @@ def iterative_retrieval(query, username, chat_id):
     answer1, in_tok, out_tok = chat(msgs)
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer1))
     prompt = (
-        "Here is the users question:\n" + query + "\nHere is the information asked for got in the first round:" + answer1 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nHere is the information asked for got in the first round:" + answer1 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -167,7 +167,7 @@ def iterative_retrieval(query, username, chat_id):
     out_tok += o
     context += "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer2))
     prompt = (
-        "Here is the users question:\n" + query + "\nHere is the information you asked for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nHere is the information you asked for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -178,7 +178,7 @@ def iterative_retrieval(query, username, chat_id):
     out_tok += o
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer3))
     prompt = (
-        "Here is the users question:\n" + query + "\nHere is the information you aksed for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information you asked for in the third round:" + answer3 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write an answer with all of the information given to you thanks.."  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nHere is the information you aksed for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information you asked for in the third round:" + answer3 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write an answer with all of the information given to you thanks.."  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -189,7 +189,7 @@ def iterative_retrieval(query, username, chat_id):
     out_tok += o
     return response, in_tok, out_tok
 
-app = FastAPI(title="AP CS Test Teacher")
+app = FastAPI(title="Standardized Test Study Helper")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -226,7 +226,7 @@ async def ask_openai(request: PromptRequest, session_token: str = Cookie(default
     print(chat_id)
     history = db.get_chat_history(username, chat_id)
     if len(history) == 0:
-        prompt = ("Please generate a title for this chat. Here is the first message sent:\n\n"+request.prompt)
+        prompt = ("Please generate a concise title for this chat. Here is the first message sent:\n\n"+request.prompt)
         msgs = [
             {"role": "system", "content": prompt}
         ]
@@ -255,7 +255,7 @@ async def ask_openai(request: PromptRequest, session_token: str = Cookie(default
 def answer_rag_api(question, chat_history_text):
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question))
     sys_prompt = (
-        "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
         + context + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
@@ -267,7 +267,7 @@ def answer_rag_api(question, chat_history_text):
 
 def query_driven_retrieval_api(query, chat_history):
     prompt = (
-        f"Rephrase the user question to be precise and decomposed for retrieval of relevant context from this java text book:\nQuestion: '{query}'"
+        f"You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Rephrase the user question to be precise and decomposed for retrieval of relevant context from this java text book:\nQuestion: '{query}'"
     )
     reform = openai.chat.completions.create(
         model=CHAT_MODEL,
@@ -278,7 +278,7 @@ def query_driven_retrieval_api(query, chat_history):
 def answer_rag_faithfulness_api(question, chat_history_text):
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(question))
     sys_prompt = (
-        "You are an expert assistant. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Use ONLY the facts below (plus your own language knowledge) to answer:\n\n"
         + context + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
@@ -292,7 +292,7 @@ def answer_rag_faithfulness_api(question, chat_history_text):
 def faithfulness_aware_api(query, chat_history):
     answer, context, in_tok, out_tok = answer_rag_faithfulness_api(query, chat_history)
     prompt = (
-        "Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nPlease brutally critique your former answer, thanks"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nPlease brutally critique your former answer, thanks"
     )
     msgs = [
         {"role": "system", "content": prompt}
@@ -301,7 +301,7 @@ def faithfulness_aware_api(query, chat_history):
     in_tok += i
     out_tok += o
     prompt = (
-        "Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nHere are you're critiques:\n" + response + "\n\nPlease fix your answer."
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the prompt that the user asked you:\n" + query + "\n\nHere is what your answer was:\n" + answer + "\n\nHere was the evidence given:\n" + context + "\n\nHere are you're critiques:\n" + response + "\n\nPlease fix your answer."
     )
     msgs = [
         {"role": "system", "content": prompt}
@@ -314,7 +314,7 @@ def faithfulness_aware_api(query, chat_history):
 def retrieval_guided_api(query, chat_history_text):
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(query))
     prompt = (
-        "Here is the users question:\n" + query + "\nPlease write a summary for each of the following pieces of context and how they relate to the question:\n" + context + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could.Here is the users question:\n" + query + "\nPlease write a summary for each of the following pieces of context and how they relate to the question:\n" + context + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -322,7 +322,7 @@ def retrieval_guided_api(query, chat_history_text):
     ]
     response, in_tok, out_tok = chat(msgs)
     prompt = (
-        "Here is the users question:\n" + query + "\nAnd here is the summary of the context.\n" + response  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nAnd here is the summary of the context.\n" + response  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -335,7 +335,7 @@ def retrieval_guided_api(query, chat_history_text):
 
 def iterative_retrieval_api(query, chat_history_text):
     prompt = (
-        "Here is the users question:\n" + query + "\nPlease write a prompt or phrase that you think will give the most relevant information for the first reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nPlease write a prompt or phrase that you think will give the most relevant information for the first reasoning step."  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -344,7 +344,7 @@ def iterative_retrieval_api(query, chat_history_text):
     answer1, in_tok, out_tok = chat(msgs)
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer1))
     prompt = (
-        "Here is the users question:\n" + query + "\nHere is the information asked for got in the first round:" + answer1 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nHere is the information asked for got in the first round:" + answer1 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -355,7 +355,7 @@ def iterative_retrieval_api(query, chat_history_text):
     out_tok += o
     context += "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer2))
     prompt = (
-        "Here is the users question:\n" + query + "\nHere is the information you asked for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nHere is the information you asked for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write a prompt or phrase that you think will give the most relevant information for the next reasoning step."  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
@@ -366,7 +366,7 @@ def iterative_retrieval_api(query, chat_history_text):
     out_tok += o
     context = "\n".join("• " + txt.replace("\n", " ") for txt, _ in top_k_chunks(answer3))
     prompt = (
-        "Here is the users question:\n" + query + "\nHere is the information you aksed for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information you asked for in the third round:" + answer3 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write an answer with all of the information given to you thanks.."  + "\n\nHere is the chat history so far:\n\n"
+        "You are an expert teacher. You are going to help the user study for various standardized tests and AP's. Be as helpful and kind as possible, and refrain from just giving the user the answer please, please try to teach them as much as possible. Also, try to ask them as many questions as possible, to confirm their learning, and drive home when they arent comprehending as well as they could. Here is the users question:\n" + query + "\nHere is the information you aksed for in the first round:" + answer1 + "\nHere is the information you asked for in the second round:" + answer2 + "\nHere is the information you asked for in the third round:" + answer3 + "\nHere is the information given to you from all the past rounds:" + context + "\nPlease write an answer with all of the information given to you thanks.."  + "\n\nHere is the chat history so far:\n\n"
         + chat_history_text
     )
     msgs = [
